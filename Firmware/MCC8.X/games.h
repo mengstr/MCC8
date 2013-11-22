@@ -495,3 +495,30 @@ const unsigned char *gamePtr[23] = {
     VERS,
     WIPEOFF
 };
+
+
+const uint16_t gameLength[23] = {
+    sizeof(PUZZLE15),
+    sizeof(BLINKY),
+    sizeof(BLITZ),
+    sizeof(BRIX),
+    sizeof(CONNECT4),
+    sizeof(GUESS),
+    sizeof(HIDDEN),
+    sizeof(INVADERS),
+    sizeof(KALEID),
+    sizeof(MAZE),
+    sizeof(MERLIN),
+    sizeof(MISSILE),
+    sizeof(PONG2),
+    sizeof(PONG),
+    sizeof(PUZZLE),
+    sizeof(SYZYGY),
+    sizeof(TANK),
+    sizeof(TETRIS),
+    sizeof(TICTAC),
+    sizeof(UFO),
+    sizeof(VBRIX),
+    sizeof(VERS),
+    sizeof(WIPEOFF)
+};
