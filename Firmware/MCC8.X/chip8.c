@@ -14,11 +14,12 @@ uint8_t     c8screen[64*32/8];  // 64 x 32 pixels 1bpp screen buffer
 uint8_t     c8ram[4096];        // RAM for chip-8 code, execution starts at 0x200
 uint8_t     c8reg[16];          // The sixteen chip-8 working registers
 uint16_t    c8i;                // The chip-8 index I register
-uint8_t     c8dt;               // Delay timer, decrements down to 0 @ 60Hz
-uint8_t     c8st;               // Sound timer, decrements down to 0 @ 60Hz
+volatile uint8_t c8dt;          // Delay timer, decrements down to 0 @ 60Hz
+volatile uint8_t c8st;          // Sound timer, decrements down to 0 @ 60Hz
 uint16_t    c8stack[16];        // Sixteen level deep stack for chip-8
 uint8_t     c8sp;               // Stack pointer for chip-8
 uint16_t    c8pc;               // Program counter for chip-8
+uint8_t     chip8debug;         // 0=Normal, 1=Debuginfo & slow, 2=Single step
 
 const uint8_t c8charset[] = {
   0xf0,0x90,0x90,0x90,0xf0,
@@ -148,46 +149,49 @@ static void C8DRWvx_vy_nib(uint8_t vx, uint8_t vy, uint8_t nibble) {
 
 
 
+
+void Chip8HandleTimers(void) {
+    if (c8dt>0) c8dt--;
+    if (c8st>0) c8st--;
+}
+
+
 int Chip8Emulate(void) {
     uint16_t    opcode;
     uint8_t     op1, op2;
     uint8_t     vx,vy;
     uint8_t     invalidOp;
     char        tmps[20];
-    uint16_t    tick;
     uint8_t     i;
     uint16_t    j;
 
 
     invalidOp=0;
-    tick=0;
-    for (;;) {
-        if (tick++>10) {
-            tick=0;
-            if (c8dt>0) c8dt--;
-            if (c8st>0) c8st--;
-        }
-
+    for(;;){
         op1=c8ram[c8pc];
         op2=c8ram[c8pc+1];
         vx=op1&0x0F;
         vy=(op2>>4)&0x0F;
         opcode=(op1<<8)+op2;
 
-//        LcdXY(0,0);
-//        sprintf(tmps,"%04x:%04x %02x %02x",c8pc, opcode, c8dt, c8st);
-//        LcdString(tmps);
-//        LcdXY(0,6);
-//        sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[0],c8reg[1],c8reg[2],c8reg[3],c8reg[4],c8reg[5],c8reg[6],c8reg[7]);
-//        LcdString(tmps);
-//        LcdXY(0,7);
-//        sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[8],c8reg[9],c8reg[10],c8reg[11],c8reg[12],c8reg[13],c8reg[14],c8reg[15]);
-//        LcdString(tmps);
-//        Delay10mS(10);
-
         KeyScan();
         if (keysX&KEY_MU) return KEY_MU;
-        //if (keysX&KEY_PLUS) c8dt=2;
+
+        if (chip8debug>0) {
+            if (keysX&KEY_PLUS) c8dt=2;
+            LcdXY(0,0);
+            sprintf(tmps,"%04x:%04x %02x %02x",c8pc, opcode, c8dt, c8st);
+            LcdString(tmps);
+            LcdXY(0,6);
+            sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[0],c8reg[1],c8reg[2],c8reg[3],c8reg[4],c8reg[5],c8reg[6],c8reg[7]);
+            LcdString(tmps);
+            LcdXY(0,7);
+            sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[8],c8reg[9],c8reg[10],c8reg[11],c8reg[12],c8reg[13],c8reg[14],c8reg[15]);
+            LcdString(tmps);
+            Delay10mS(10);
+        }
+
+
         Delay100uS();
 
         c8pc+=2;

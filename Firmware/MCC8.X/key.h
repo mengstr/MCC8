@@ -15,7 +15,7 @@ extern uint8_t keysX;           // The first four bits here is set as the contro
 void KeyInit(void);
 uint16_t KeyScan(void);
 void KeyWaitForRelease(void);
-
+uint8_t KeyTranslateKeys(uint16_t k);
 
 #endif	/* KEY_H */
 

@@ -88,3 +88,29 @@ void KeyWaitForRelease(void) {
         if (keys+keysX==0) break;
     }
 }
+
+
+
+
+//
+//
+//
+uint8_t KeyTranslateKeys(uint16_t k) {
+    if (k&1) return 0;
+    if (k&2) return 1;
+    if (k&4) return 2;
+    if (k&8) return 3;
+    if (k&16) return 4;
+    if (k&32) return 5;
+    if (k&64) return 6;
+    if (k&128) return 7;
+    if (k&256) return 8;
+    if (k&512) return 9;
+    if (k&1024) return 10;
+    if (k&2048) return 11;
+    if (k&2048) return 12;
+    if (k&8192) return 13;
+    if (k&16384) return 14;
+    if (k&32768) return 15;
+    return 255;
+}

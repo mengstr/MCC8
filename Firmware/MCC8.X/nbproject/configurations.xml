@@ -9,6 +9,7 @@
       <itemPath>lcd.h</itemPath>
       <itemPath>key.h</itemPath>
       <itemPath>chip8.h</itemPath>
+      <itemPath>games.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -24,7 +25,6 @@
       <itemPath>configuration_bits.c</itemPath>
       <itemPath>lcd.c</itemPath>
       <itemPath>key.c</itemPath>
-      <itemPath>games.h</itemPath>
       <itemPath>chip8.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"

@@ -3,13 +3,17 @@
 #include <stdbool.h>        // true/false definitions
 #include <stdio.h>
 
+//#include <p24FJ64GA002.h>
+
 #include <xc.h>
+#include <libpic30.h>
 #include "config.h"
 #include "utils.h"
 #include "lcd.h"
 #include "key.h"
 #include "games.h"
 #include "chip8.h"
+
 
 /*
 
@@ -88,32 +92,86 @@ void test8(void) {
 
 
 
-
-
-
-
-
-
-
-
-int ShowGameMenu(void) {
+//
+//
+//
+uint8_t ShowGameMenu(void) {
     uint8_t i;
+    uint8_t mnu=0;
+    uint8_t realKey;
 
-    LcdClear();
-    for (i=0; i<8; i++) {
-        LcdXY(0,i);
-        LcdCharacter(49+i);
-        LcdXY(10,i);
-        LcdString(gameName[i]);
+    for (;;) {
+        LcdClear();
+        if (mnu==0) {
+            for (i=0; i<8; i++) {
+                LcdXY(0,i);
+                LcdCharacter(49+i);
+                LcdXY(10,i);
+                LcdString(gameName[i]);
+            }
+        }
+        if (mnu==1) {
+            for (i=0; i<8; i++) {
+                LcdXY(0,i);
+                LcdCharacter(49+i);
+                LcdXY(10,i);
+                LcdString(gameName[i+8]);
+            }
+        }
+        if (mnu==2) {
+            for (i=0; i<7; i++) {
+                LcdXY(0,i);
+                LcdCharacter(49+i);
+                LcdXY(10,i);
+                LcdString(gameName[i+16]);
+            }
+        }
+        if (mnu==3) {
+            LcdXY(0,0);
+            LcdCharacter('F');
+            LcdXY(10,0);
+            LcdString("Toggle Debug");
+        }
+        for(;;) {
+            KeyScan();
+            realKey=KeyTranslateKeys(keys);
+            if (keysX&KEY_MU) {
+                mnu++;
+                if (mnu>3) mnu=0;
+                LcdClear();
+                KeyWaitForRelease();
+                break;
+            }
+            if (mnu==0 && realKey>0 && realKey<9) return realKey+0-1;
+            if (mnu==1 && realKey>0 && realKey<9) return realKey+8-1;
+            if (mnu==2 && realKey>0 && realKey<8) return realKey+16-1;
+        }
+
     }
-    while (!KeyScan());
     return 0;
 }
 
 //char gameName[23][9] = {
 //const unsigned char *gamePtr[23] = {
+//const uint16_t gameLength[23] = {
 
 
+void InitTimer1(void) {
+  T1CON	 = 0x8010;
+  _T1IE	 = 1;
+  _T1IF	 = 0;
+  IPC0	 = IPC0 | 0x1000;
+  PR1	 = 8333;
+}
+
+
+
+
+// Timer 1 interrupt service routine
+void __attribute__((__interrupt__, __auto_psv__)) _T1Interrupt(void) {
+    IFS0bits.T1IF = 0;      // Clear Timer 1 interrupt flag
+    Chip8HandleTimers();
+}
 
 
 
@@ -124,11 +182,14 @@ int main(void) {
     uint8_t     res;
 
     AD1PCFG=0xEFFF;         // All pins are Digital
+    InitTimer1();
     LcdInit();
     KeyInit();
     Delay10mS(50);
+    chip8debug=0;
 
     for (;;) {
+        LcdClear();
         LcdLogo();
         for(;;) {
             KeyScan();
@@ -136,8 +197,8 @@ int main(void) {
         }
         LcdClear();
         KeyWaitForRelease();
-        ShowGameMenu();
-//      C8Reset(INVADERS, sizeof(INVADERS));
+        res=ShowGameMenu();
+        Chip8Reset(gamePtr[res], gameLength[res]);
         LcdFill();
         Chip8RefreshScreen();
         res=Chip8Emulate();
