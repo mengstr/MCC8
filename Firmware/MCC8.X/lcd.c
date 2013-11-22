@@ -5,10 +5,6 @@
 //#include "spi.h"
 #include "lcd.h"
 
-#define LCD_C 0         // Command mode
-#define LCD_D 1         // Data mode
-
-
 
 #ifdef EN_LCD_LOGO
 const uint8_t logo[489] = {

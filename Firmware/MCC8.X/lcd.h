@@ -7,6 +7,8 @@
 //#define EN_LCD_BIGNUM
 //#define EN_LCD_HUGENUM
 
+#define LCD_C 0         // Command mode
+#define LCD_D 1         // Data mode
 
 
 void LcdSend(uint8_t cd, uint8_t data);
