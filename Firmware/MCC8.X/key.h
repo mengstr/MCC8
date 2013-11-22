@@ -14,6 +14,7 @@ extern uint8_t keysX;           // The first four bits here is set as the contro
 
 void KeyInit(void);
 uint16_t KeyScan(void);
+void KeyWaitForRelease(void);
 
 
 #endif	/* KEY_H */

@@ -75,3 +75,16 @@ uint16_t KeyScan(void) {
 
     return keys;
 }
+
+
+
+//
+//
+//
+void KeyWaitForRelease(void) {
+    for (;;) {
+        Delay10mS(10);
+        KeyScan();
+        if (keys+keysX==0) break;
+    }
+}
