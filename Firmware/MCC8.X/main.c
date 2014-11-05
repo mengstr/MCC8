@@ -5,6 +5,7 @@
 
 #include <xc.h>
 #include "config.h"
+#include "spi.h"
 #include "oled.h"
 #include "eeprom.h"
 #include "key.h"
@@ -46,7 +47,7 @@ uint8_t ShowGameMenu(void) {
                 OledXY(0,i*8);
                 OledCharacter((char)49+i);
                 OledXY(10,i*8);
-                OledString(gameName[i]);
+                OledString(games[i].gameName);
             }
         }
         if (mnu==1) {
@@ -54,7 +55,7 @@ uint8_t ShowGameMenu(void) {
                 OledXY(0,i*8);
                 OledCharacter((char)49+i);
                 OledXY(10,i*8);
-                OledString(gameName[i+8]);
+                OledString(games[i+8].gameName);
             }
         }
         if (mnu==2) {
@@ -62,7 +63,7 @@ uint8_t ShowGameMenu(void) {
                 OledXY(0,i*8);
                 OledCharacter(49+i);
                 OledXY(10,i*8);
-                OledString(gameName[i+16]);
+                OledString(games[i+16].gameName);
             }
         }
         if (mnu==3) {
@@ -151,7 +152,7 @@ int main(void) {
     
     for (;;) {
         res=ShowGameMenu();
-        Chip8Reset(gamePtr[res], gameLength[res]);
+        Chip8Reset(games[res].gamePtr, games[res].gameLength);
 //        LcdFill();
         Chip8RefreshScreen();
         res=Chip8Emulate();

@@ -16,7 +16,7 @@ extern uint16_t    c8pc;               // Program counter for chip-8
 extern uint8_t     chip8debug;         // 0=Normal, 1=Debuginfo & slow, 2=Single step
 
 void Chip8RefreshScreen(void);
-void Chip8Reset(uint8_t *pLoad, uint16_t lenLoad);
+void Chip8Reset(const uint8_t *pLoad, const uint16_t lenLoad);
 int Chip8Emulate(void);
 void Chip8HandleTimers(void);
 

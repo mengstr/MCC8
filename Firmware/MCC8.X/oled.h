@@ -65,7 +65,7 @@ void OledPixel(int16_t x, int16_t y, uint16_t color);
 void OledClear(void);
 void OledRefresh(void);
 void OledCharacter(char character);
-void OledString(char *characters);
+void OledString(const char *string);
 
 
 #endif

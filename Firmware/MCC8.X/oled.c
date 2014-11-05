@@ -3,9 +3,8 @@
 #include <string.h>
 
 #include <xc.h>
-
+#include "config.h"
 #include "spi.h"
-#include "utils.h"
 #include "oled.h"
 
 
@@ -349,8 +348,8 @@ void OledCharacter(char character) {
 //
 //
 //
-void OledString(char *characters) {
-    while (*characters) {
-        OledCharacter(*characters++);
+void OledString(const char *string) {
+    while (*string) {
+        OledCharacter(*string++);
     }
 }

@@ -447,96 +447,39 @@ const uint8_t WIPEOFF[206]={
 };
 
 
+typedef struct  {
+    const char     gameName[10];   // The name of the games as shown on the menu
+    const uint8_t  *gamePtr;       // Pointers to where the game codes begin in memory
+    const uint16_t gameLength;     // The length of the game codes
+} games_t;
 
-//
-// The name of the games as shown on the menu
-//
-char gameName[23][9] = {
-    "15Puzzle",
-    "Blinky",
-    "Blitz",
-    "Brix",
-    "Connect4",
-    "Guess",
-    "Hidden",
-    "Invaders",
-    "Kaleid",
-    "Maze",
-    "Merlin",
-    "Missile",
-    "Pong2",
-    "Pong",
-    "Puzzle",
-    "Syzygy",
-    "Tank",
-    "Tetris",
-    "Tictac",
-    "UFO",
-    "Vbrix",
-    "Vers",
-    "Wipeoff"
+
+games_t games[23] = {
+    {"15Puzzle", PUZZLE15,   sizeof(PUZZLE15)  },
+    {"Blinky",   BLINKY,     sizeof(BLINKY)    },
+    {"Blitz",    BLITZ,      sizeof(BLITZ),    },
+    {"Brix",     BRIX,       sizeof(BRIX)      },
+    {"Connect4", CONNECT4,   sizeof(CONNECT4)  },
+    {"Guess",    GUESS,      sizeof(GUESS)     },
+    {"Hidden",   HIDDEN,     sizeof(HIDDEN)    },
+    {"Invaders", INVADERS,   sizeof(INVADERS)  },
+    {"Kaleid",   KALEID,     sizeof(KALEID)    },
+    {"Maze",     MAZE,       sizeof(MAZE)      },
+    {"Merlin",   MERLIN,     sizeof(MERLIN)    },
+    {"Missile",  MISSILE,    sizeof(MISSILE)   },
+    {"Pong2",    PONG2,      sizeof(PONG2)     },
+    {"Pong",     PONG,       sizeof(PONG)      },
+    {"Puzzle",   PUZZLE,     sizeof(PUZZLE)    },
+    {"Syzygy",   SYZYGY,     sizeof(SYZYGY)    },
+    {"Tank",     TANK,       sizeof(TANK)      },
+    {"Tetris",   TETRIS,     sizeof(TETRIS)    },
+    {"Tictac",   TICTAC,     sizeof(TICTAC)    },
+    {"UFO",      UFO,        sizeof(UFO)       },
+    {"Vbrix",    VBRIX,      sizeof(VBRIX)     },
+    {"Vers",     VERS,       sizeof(VERS)      },
+    {"Wipeoff",  WIPEOFF,    sizeof(WIPEOFF)   }
 };
 
-
-
-//
-// Pointers to where the game codes begin in memory
-//
-const unsigned char *gamePtr[23] = {
-    PUZZLE15,
-    BLINKY,
-    BLITZ,
-    BRIX,
-    CONNECT4,
-    GUESS,
-    HIDDEN,
-    INVADERS,
-    KALEID,
-    MAZE,
-    MERLIN,
-    MISSILE,
-    PONG2,
-    PONG,
-    PUZZLE,
-    SYZYGY,
-    TANK,
-    TETRIS,
-    TICTAC,
-    UFO,
-    VBRIX,
-    VERS,
-    WIPEOFF
-};
-
-
-//
-// The length of the game codes
-//
-const uint16_t gameLength[23] = {
-    sizeof(PUZZLE15),
-    sizeof(BLINKY),
-    sizeof(BLITZ),
-    sizeof(BRIX),
-    sizeof(CONNECT4),
-    sizeof(GUESS),
-    sizeof(HIDDEN),
-    sizeof(INVADERS),
-    sizeof(KALEID),
-    sizeof(MAZE),
-    sizeof(MERLIN),
-    sizeof(MISSILE),
-    sizeof(PONG2),
-    sizeof(PONG),
-    sizeof(PUZZLE),
-    sizeof(SYZYGY),
-    sizeof(TANK),
-    sizeof(TETRIS),
-    sizeof(TICTAC),
-    sizeof(UFO),
-    sizeof(VBRIX),
-    sizeof(VERS),
-    sizeof(WIPEOFF)
-};
 
 
 #endif

@@ -77,7 +77,7 @@ void Chip8RefreshScreen(void) {
 //
 //
 //
-void Chip8Reset(uint8_t *pLoad, uint16_t lenLoad) {
+void Chip8Reset(const uint8_t *pLoad, const uint16_t lenLoad) {
     uint16_t i;
 
     for (i=0; i<16; i++) {                  // Clear registers and stack
