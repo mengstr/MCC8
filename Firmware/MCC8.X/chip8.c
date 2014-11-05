@@ -1,12 +1,11 @@
 #include <stdlib.h>
-#include <stdint.h>         // uint8_t definitions
-#include <stdbool.h>        // true/false definitions
+#include <stdint.h>         
+#include <stdbool.h>        
 #include <stdio.h>
 
 #include <xc.h>
 #include "config.h"
-#include "utils.h"
-#include "lcd.h"
+#include "oled.h"
 #include "key.h"
 #include "chip8.h"
 
@@ -41,35 +40,36 @@ const uint8_t c8charset[] = {
 };
 
 
-
-
-void Chip8RefreshScreen(void) {
-    uint8_t i,x,y;
+//
+//
+//
+static uint8_t Chip8TestPixelXY(uint8_t x, uint8_t y) {
     uint8_t v;
-    uint8_t *p;
     uint8_t mask;
+    v=c8screen[(x+y*64)/8];
+    mask=1<<(7-(x&0x07));
+    return v&mask;
+}
 
-    for (y=0; y<4; y++) {
-        p=c8screen+y*64;
-        LcdXY(16,y+1);
-        for (x=0; x<8; x++) {
-            mask=0x80;
-            for (i=0; i<8; i++) {
-                v=0;
-                if ((*(p+0)) &mask) v|=0x01;
-                if ((*(p+8)) &mask) v|=0x02;
-                if ((*(p+16))&mask) v|=0x04;
-                if ((*(p+24))&mask) v|=0x08;
-                if ((*(p+32))&mask) v|=0x10;
-                if ((*(p+40))&mask) v|=0x20;
-                if ((*(p+48))&mask) v|=0x40;
-                if ((*(p+56))&mask) v|=0x80;
-                LcdSend(LCD_D, v);
-                mask=mask/2;
+
+//
+//
+//
+void Chip8RefreshScreen(void) {
+    uint8_t x,y;
+
+    OledClear();
+    for (y=0; y<32; y++) {
+        for (x=0; x<64; x++) {
+            if (Chip8TestPixelXY(x,y)) {
+                OledPixel(x*2,   y*2,   WHITE);
+                OledPixel(x*2+1, y*2,   WHITE);
+                OledPixel(x*2,   y*2+1, WHITE);
+                OledPixel(x*2+1, y*2+1, WHITE);
             }
-            p++;
         }
     }
+    OledRefresh();
 }
 
 
@@ -110,7 +110,9 @@ void Chip8Reset(uint8_t *pLoad, uint16_t lenLoad) {
 
 
 
-
+//
+//
+//
 static uint8_t C8XorPixelXY(uint8_t x, uint8_t y) {
     uint8_t wasset=0;
     uint8_t mask;
@@ -149,19 +151,23 @@ static void C8DRWvx_vy_nib(uint8_t vx, uint8_t vy, uint8_t nibble) {
 
 
 
-
+//
+//
+//
 void Chip8HandleTimers(void) {
     if (c8dt>0) c8dt--;
     if (c8st>0) c8st--;
 }
 
-
+//
+//
+//
 int Chip8Emulate(void) {
     uint16_t    opcode;
     uint8_t     op1, op2;
     uint8_t     vx,vy;
     uint8_t     invalidOp;
-    char        tmps[20];
+    char      tmps[20];
     uint8_t     i;
     uint16_t    j;
 
@@ -179,20 +185,20 @@ int Chip8Emulate(void) {
 
         if (chip8debug>0) {
             if (keysX&KEY_PLUS) c8dt=2;
-            LcdXY(0,0);
+            OledXY(0,0);
             sprintf(tmps,"%04x:%04x %02x %02x",c8pc, opcode, c8dt, c8st);
-            LcdString(tmps);
-            LcdXY(0,6);
+            OledString(tmps);
+            OledXY(0,6);
             sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[0],c8reg[1],c8reg[2],c8reg[3],c8reg[4],c8reg[5],c8reg[6],c8reg[7]);
-            LcdString(tmps);
-            LcdXY(0,7);
+            OledString(tmps);
+            OledXY(0,7);
             sprintf(tmps,"%02x%02x%02x%02x%02x%02x%02x%02x",c8reg[8],c8reg[9],c8reg[10],c8reg[11],c8reg[12],c8reg[13],c8reg[14],c8reg[15]);
-            LcdString(tmps);
-            Delay10mS(10);
+            OledString(tmps);
+            __delay_ms(100);
         }
 
 
-        Delay100uS();
+        __delay_us(100);
 
         c8pc+=2;
         switch (opcode&0xF000) {
@@ -208,7 +214,9 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0xEE:  // 00EE - RET      Return from a subroutine.
-                        // The interpreter sets the program counter to the address at the top of the stack, then subtracts 1 from the stack pointer.
+                        // The interpreter sets the program counter to the 
+                        // address at the top of the stack, then subtracts 1
+                        // from the stack pointer.
                         c8pc=c8stack[c8sp];
                         c8sp--;
                         break;
@@ -226,7 +234,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
             case 0x2000:    // 2nnn - CALL addr      Call subroutine at nnn.
-                // The interpreter increments the stack pointer, then puts the current PC on the top of the stack. The PC is then set to nnn.
+                // The interpreter increments the stack pointer, then puts the
+                // current PC on the top of the stack. The PC is then set to nnn
                 c8sp++;
                 c8stack[c8sp]=c8pc;
                 c8pc=opcode&0xFFF;
@@ -234,15 +243,15 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
             case 0x3000:    // 3xkk - SE Vx, byte - Skip next instruction if Vx = kk.
-                // The interpreter compares register Vx to kk, and if they are equal, increments
-                // the program counter by 2.
+                // The interpreter compares register Vx to kk, and if they are 
+                // equal, increments the program counter by 2.
                 if (c8reg[vx]==op2) c8pc+=2;
                 break;
 
 //----------------------------------------------------------------------------
             case 0x4000:    // 4xkk - SNE Vx, byte -  Skip next instruction if Vx != kk.
-                // The interpreter compares register Vx to kk, and if they are not equal, increments
-                // the program counter by 2.
+                // The interpreter compares register Vx to kk, and if they are 
+                // not equal, increments the program counter by 2.
                 if (c8reg[vx]!=op2) c8pc+=2;
                 break;
 
@@ -250,7 +259,9 @@ int Chip8Emulate(void) {
                 switch (opcode&0x000F) {
 //----------------------------------------------------------------------------
                     case 0x00:  // 5xy0 - SE Vx, Vy - Skip next instruction if Vx = Vy.
-                        //    The interpreter compares register Vx to register Vy, and if they are equal, increments the program counter by 2.
+                        // The interpreter compares register Vx to register 
+                        // Vy, and if they are equal, increments the program
+                        // counter by 2.
                         if (c8reg[vx]==c8reg[vy]) c8pc+=2;
                         break;
 
@@ -262,13 +273,14 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
             case 0x6000:    // 6xkk - LD Vx, byte       Set Vx = kk.
-                //    The interpreter puts the value kk into register Vx.
+                // The interpreter puts the value kk into register Vx.
                 c8reg[vx]=op2;
                 break;
 
 //----------------------------------------------------------------------------
             case 0x7000:    // 7xkk - ADD Vx, byte        Set Vx = Vx + kk.
-                // Adds the value kk to the value of register Vx, then stores the result in Vx.
+                // Adds the value kk to the value of register Vx, then stores
+                // the result in Vx.
                 c8reg[vx]+=op2;
                 break;
 
@@ -277,35 +289,37 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x00:  // 8xy0 - LD Vx, Vy       Set Vx = Vy.
-                        //    Stores the value of register Vy in register Vx.
+                        // Stores the value of register Vy in register Vx.
                         c8reg[vx]=c8reg[vy];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x01:  // 8xy1 - OR Vx, Vy - Set Vx = Vx OR Vy.
-                        //    Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. A bitwise OR compares the corrseponding
+                        // Performs a bitwise OR on the values of Vx and Vy,
+                        // then stores the result in Vx.
                         c8reg[vx]|=c8reg[vy];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x02:  // 8xy2 - AND Vx, Vy        Set Vx = Vx AND Vy.
-                        // Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx. A bitwise AND compares the corrseponding
-                        // bits from two values, and if both bits are 1, then the same bit in the result is also 1. Otherwise, it is 0.
+                        // Performs a bitwise AND on the values of Vx and Vy,
+                        // then stores the result in Vx.
                         c8reg[vx]&=c8reg[vy];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x03:  // 8xy3 - XOR Vx, Vy - Set Vx = Vx XOR Vy.
-                        //    Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result in Vx. An exclusive OR compares the
-                        //    corrseponding bits from two values, and if the bits are not both the same, then the corresponding bit in the result is
-                        //    set to 1. Otherwise, it is 0.
+                        // Performs a bitwise exclusive OR on the values of Vx
+                        // and Vy, then stores the result in Vx.
                         c8reg[vx]^=c8reg[vy];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x04:  // 8xy4 - ADD Vx, Vy      Set Vx = Vx + Vy, set VF = carry.
-                        // The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,) VF is set to 1,
-                        // otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
+                        // The values of Vx and Vy are added together. If the
+                        // result is greater than 8 bits (i.e., > 255,) VF is
+                        // set to 1, otherwise 0. Only the lowest 8 bits of the
+                        // result are kept, and stored in Vx.
                         c8reg[15]=0;
                         if (c8reg[vx]+c8reg[vy]>255) c8reg[15]=1;
                         c8reg[vx]+=c8reg[vy];
@@ -313,7 +327,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x05:  // 8xy5 - SUB Vx, Vy     Set Vx = Vx - Vy, set VF = NOT borrow.
-                        //    If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results stored in Vx.
+                        // If Vx > Vy, then VF is set to 1, otherwise 0. Then
+                        // Vy is subtracted from Vx, and the results stored in Vx.
                         c8reg[15]=0;
                         if (c8reg[vx]>c8reg[vy]) c8reg[15]=1;
                         c8reg[vx]-=c8reg[vy];
@@ -321,7 +336,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x06:  // 8xy6 - SHR Vx {, Vy}      Set Vx = Vx SHR 1.
-                        //    If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
+                        // If the least-significant bit of Vx is 1, then VF
+                        // is set to 1, otherwise 0. Then Vx is divided by 2.
                         c8reg[15]=0;
                         if ((c8reg[vx]&0x01)==0x01) c8reg[15]=1;
                         c8reg[vx]/=2;
@@ -329,7 +345,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x07:  // 8xy7 - SUBN Vx, Vy      Set Vx = Vy - Vx, set VF = NOT borrow.
-                        //    If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.
+                        // If Vy > Vx, then VF is set to 1, otherwise 0. Then
+                        // Vx is subtracted from Vy, and the results stored in Vx.
                         c8reg[15]=0;
                         if (c8reg[vy]>c8reg[vx]) c8reg[15]=1;
                         c8reg[vx]=c8reg[vy]-c8reg[vx];
@@ -337,7 +354,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x0E:  // 8xyE - SHL Vx {, Vy}     Set Vx = Vx SHL 1.
-                        //    If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
+                        // If the most-significant bit of Vx is 1, then VF is
+                        // set to 1, otherwise to 0. Then Vx is multiplied by 2.
                         c8reg[15]=0;
                         if ((c8reg[vx]&0x80)==0x80) c8reg[15]=1;
                         c8reg[vx]*=2;
@@ -353,7 +371,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x00:  // 9xy0 - SNE Vx, Vy       Skip next instruction if Vx != Vy.
-                        //    The values of Vx and Vy are compared, and if they are not equal, the program counter is increased by 2.
+                        //  The values of Vx and Vy are compared, and if they
+                        // are not equal, the program counter is increased by 2.
                         if (c8reg[vx]!=c8reg[vy]) c8pc+=2;
                         break;
 
@@ -376,8 +395,9 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
             case 0xC000:    // Cxkk - RND Vx, byte - Set Vx = random byte AND kk.
-                //    The interpreter generates a random number from 0 to 255, which is then ANDed with the value kk. The results are stored
-                //    in Vx. See instruction 8xy2 for more information on AND.
+                // The interpreter generates a random number from 0 to 255,
+                // which is then ANDed with the value kk. The results are stored
+                // in Vx.
                 c8reg[vx]=rand()&op2;
                 break;
 
@@ -391,13 +411,17 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x9E:  // Ex9E - SKP Vx     Skip next instruction if key with the value of Vx is pressed.
-                        //    Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2.
+                        // Checks the keyboard, and if the key corresponding
+                        // to the value of Vx is currently in the down position
+                        // PC is increased by 2.
                         if (keys&(1UL<<c8reg[vx])) c8pc+=2;
                         break;
 
 //----------------------------------------------------------------------------
                     case 0xA1:  // ExA1 - SKNP Vx      Skip next instruction if key with the value of Vx is not pressed.
-                        //    Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2.
+                        // Checks the keyboard, and if the key corresponding to 
+                        // the value of Vx is currently in the up position,
+                        //PC is increased by 2.
                         if (!(keys&(1UL<<c8reg[vx]))) c8pc+=2;
                         break;
 
@@ -410,15 +434,17 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x07:  // Fx07 - LD Vx, DT       Set Vx = delay timer value.
-                        //    The value of DT is placed into Vx.
+                        // The value of DT is placed into Vx.
                         c8reg[vx]=c8dt;
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x0A:  // Fx0A - LD Vx, K    Wait for a key press, store the value of the key in Vx.
-                        //    All execution stops until a key is pressed, then the value of that key is stored in Vx.
+                        // All execution stops until a key is pressed, then
+                        // the value of that key is stored in Vx.
                         if (keys==0) {
-                            c8pc-=2;    // if no key is pressed then set the Program Counter back to this instruction again
+                            c8pc-=2;  // if no key is pressed then set the
+                                      // Program Counter back to this instruction again
                         } else {
                             if (keys==0x0001) c8reg[vx]=0;
                             if (keys==0x0002) c8reg[vx]=1;
@@ -441,33 +467,38 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x15:  // Fx15 - LD DT, Vx      Set delay timer = Vx.
-                        //    DT is set equal to the value of Vx.
+                        // DT is set equal to the value of Vx.
                         c8dt=c8reg[vx];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x18:  // Fx18 - LD ST, Vx       Set sound timer = Vx.
-                        //    ST is set equal to the value of Vx.
+                        // ST is set equal to the value of Vx.
                         c8st=c8reg[vx];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x1E:  // Fx1E - ADD I, Vx       Set I = I + Vx.
-                        // The values of I and Vx are added, and the results are stored in I.
+                        // The values of I and Vx are added, and the results
+                        // are stored in I.
                         c8i+=c8reg[vx];
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x29:  // Fx29 - LD F, Vx    Set I = location of sprite for digit Vx.
-                        //    The value of I is set to the location for the hexadecimal sprite corresponding to the value of Vx. See section 2.4,
-                        //    Display, for more information on the Chip-8 hexadecimal font.
+                        // The value of I is set to the location for the
+                        // hexadecimal sprite corresponding to the value of Vx.
+                        // See section 2.4, Display, for more information on the
+                        // Chip-8 hexadecimal font.
                         c8i=0x50+(vx)*5;
                         break;
 
 //----------------------------------------------------------------------------
                     case 0x33:  // Fx33 - LD B, Vx - Store BCD valye of Vx in memory locations I,I+1,I+2.
-                        //    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit
-                        //    at location I+1, and the ones digit at location I+2.
+                        // The interpreter takes the decimal value of Vx, and
+                        // places the hundreds digit in memory at location in I,
+                        // the tens digit at location I+1, and the ones digit
+                        // at location I+2.
                         c8ram[c8i  ]=(vx/100)%10;
                         c8ram[c8i+1]=(vx/10)%10;
                         c8ram[c8i+2]=(vx)%10;
@@ -475,7 +506,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x55:  // Fx55 - LD [I], Vx    Store registers V0 through Vx in memory starting at location I.
-                        //    The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I.
+                        // The interpreter copies the values of registers V0
+                        // through Vx into memory, starting at the address in I.
                         for(j=0; j<=(vx); j++) {
                             c8ram[c8i+j]=c8reg[j];
                         }
@@ -483,7 +515,8 @@ int Chip8Emulate(void) {
 
 //----------------------------------------------------------------------------
                     case 0x65:  // Fx65 - LD Vx, [I]     Read registers V0 through Vx from memory starting at location I.
-                        //    The interpreter reads values from memory starting at location I into registers V0 through Vx.
+                        // The interpreter reads values from memory starting
+                        // at location I into registers V0 through Vx.
                         for(j=0; j<=(vx); j++) {
                             c8reg[j]=c8ram[c8i+j];
                         }
@@ -497,9 +530,10 @@ int Chip8Emulate(void) {
 
         if (invalidOp) {
             invalidOp=0;
-            LcdXY(0,7);
-            sprintf(tmps,"Err! %04x @ %04x",opcode,c8pc);
-            LcdString(tmps);
+            OledXY(0,7);
+            sprintf((char *)tmps,"Err! %04x @ %04x",opcode,c8pc);
+            OledString(tmps);
+            OledRefresh();
         }
     }   // for(;;)
 

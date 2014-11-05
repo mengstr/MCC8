@@ -1,7 +1,7 @@
 #ifndef KEY_H
 #define	KEY_H
 
-#include <stdint.h>         // uint8_t definitions
+#include <stdint.h>
 
 
 #define KEY_OK          0x01
@@ -16,6 +16,8 @@ void KeyInit(void);
 uint16_t KeyScan(void);
 void KeyWaitForRelease(void);
 uint8_t KeyTranslateKeys(uint16_t k);
+void CtmuInit(void);
+uint16_t CtmuRead(int index);
 
 #endif	/* KEY_H */
 
