@@ -1,4 +1,5 @@
 *.bak
+*~
 *.hex
 *.HEX
 *.bin
@@ -30,4 +31,5 @@ funclist
 *.sym
 *.tmp
 *.dep
-
+*.job
+*.pro
